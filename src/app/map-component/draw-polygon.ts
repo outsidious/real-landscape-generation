@@ -5,21 +5,18 @@ import {
   marker,
   Marker,
   divIcon,
-  polyline,
-  Polyline,
-  latLng,
   polygon,
 } from 'leaflet';
 
 const pointHtmlStyles = `
     background-color: #FF8C00;
-    width: 2rem;
-    height: 2rem;
+    width: 1rem;
+    height: 1rem;
     display: block;
-    left: -0.5rem;
-    top: -0.5rem;
+    left: -0.25rem;
+    top: -0.25rem;
     position: relative;
-    border-radius: 2rem 2rem 2rem 2rem;
+    border-radius: 1rem 1rem 1rem 1rem;
     border: 1px solid #FFFFFF`;
 
 const icon = divIcon({
@@ -31,32 +28,32 @@ export class DrawPolygon {
   startPoint: LatLng;
   finishPoint: LatLng;
   latlngArr: LatLng[];
-  polylines: Polygon[];
+  polygon: Polygon;
   points: Marker[];
   startDrawing: boolean;
   map: Map;
 
   constructor(map: Map) {
     this.latlngArr = [];
-    this.polylines = [];
+    this.polygon = null;
     this.points = [];
     this.map = map;
     this.startDrawing = false;
   }
 
   reset() {
-    this.polylines.forEach((p) => {
-      this.map.removeLayer(p);
-    });
-    this.polylines = [];
+    if (this.polygon) {
+      this.map.removeLayer(this.polygon);
+    }
+    this.polygon = null;
     this.points.forEach((p) => {
       this.map.removeLayer(p);
     });
+    this.points = [];
   }
 
-  drawEventHandler(e): number[][] | null {
+  drawEventHandler(e): LatLng[] | null {
     if (e.type === 'mousemove') {
-      console.log(this.startDrawing);
       if (this.startDrawing === true) {
         this.finishPoint = e.latlng;
         this.draw();
@@ -66,7 +63,6 @@ export class DrawPolygon {
       }
     } else if (e.type === 'contextmenu') {
       if (!this.startDrawing) {
-        this.points = [];
         this.reset();
         this.startPoint = e.latlng;
         this.finishPoint = this.startPoint;
@@ -77,20 +73,23 @@ export class DrawPolygon {
         return null;
       } else {
         this.startDrawing = false;
+        this.finishPoint = e.latLng;
         return this.closePolygon();
       }
     }
   }
 
   draw() {
-    this.points.slice(1);
     this.reset();
-    let newPoint = marker(this.finishPoint, { icon: icon });
+    let newPoint = marker(this.startPoint, { icon: icon });
     newPoint.addTo(this.map);
     this.points.push(newPoint);
     newPoint = marker([this.startPoint.lat, this.finishPoint.lng], {
       icon: icon,
     });
+    newPoint.addTo(this.map);
+    this.points.push(newPoint);
+    newPoint = marker(this.finishPoint, { icon: icon });
     newPoint.addTo(this.map);
     this.points.push(newPoint);
     newPoint = marker([this.finishPoint.lat, this.startPoint.lng], {
@@ -99,25 +98,24 @@ export class DrawPolygon {
     newPoint.addTo(this.map);
     this.points.push(newPoint);
 
-    const newLine = polygon(
+    const newPolygon = polygon(
       this.points.map((p) => p.getLatLng()),
       { color: 'orange' }
     );
-    newLine.addTo(this.map);
-    this.polylines.push(newLine);
+    newPolygon.addTo(this.map);
+    this.polygon = newPolygon;
   }
 
-  closePolygon(): number[][] {
-    for (const line of this.polylines) {
-      line.remove();
+  closePolygon(): LatLng[]{
+    if (this.polygon) {
+      this.map.removeLayer(this.polygon);
     }
     for (const point of this.points) {
       point.remove();
     }
-    const res = this.points.map((p) => [p.getLatLng().lat, p.getLatLng().lng]);
-    res.push([this.points[0].getLatLng().lat, this.points[0].getLatLng().lng]);
+    const res = this.points.map((p) => p.getLatLng());
     this.points = [];
-    this.polylines = [];
+    this.polygon = null;
     return res;
   }
 }

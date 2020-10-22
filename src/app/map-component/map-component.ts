@@ -19,7 +19,7 @@ export class MapComponent implements OnInit {
         attribution: '&copy; OpenStreetMap contributors',
       }),
     ],
-    zoom: 7,
+    zoom: 6,
     center: latLng([46.879966, -121.726909]),
   };
 

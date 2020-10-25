@@ -1,14 +1,14 @@
-import { ConditionalExpr } from '@angular/compiler';
 import { Component, OnInit } from '@angular/core';
 import { latLng, tileLayer, Map, polygon, LatLng } from 'leaflet';
 import { DrawPolygon } from './draw-polygon';
+import { BotherService } from '../bother/bother-service'
 
 @Component({
   selector: 'leaflet-map',
   templateUrl: './map-component.html',
   styleUrls: ['./map-component.css'],
 })
-export class MapComponent implements OnInit {
+export class MapComponent {
   map: Map;
   drawPolygon: DrawPolygon;
   drawPolygonState: Boolean = true;
@@ -23,9 +23,12 @@ export class MapComponent implements OnInit {
     center: latLng([46.879966, -121.726909]),
   };
 
-  constructor() {}
+  constructor(
+    private BotherService: BotherService,
+  ) {
+    console.log("ok");
+  }
 
-  ngOnInit() {}
 
   mapEventHandler(e) {
     if (this.drawPolygonState) {
@@ -34,6 +37,7 @@ export class MapComponent implements OnInit {
         const leafletPolygon = polygon(newPolygon, { color: 'orange' });
         leafletPolygon.addTo(this.map);
         console.log(newPolygon[0], newPolygon[2]);
+        this.BotherService.runBother();
       }
     }
   }

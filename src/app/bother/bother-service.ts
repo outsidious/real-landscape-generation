@@ -9,7 +9,7 @@ export class BotherService {
 
     constructor(private http: HttpClient) {}
 
-    runBother() {
-        this.http.get(environment.backend + "/bother").subscribe((data: string[]) => console.log(data));
+    runBother(bounds) {
+        this.http.get(environment.backend + "/bother/?bounds=" + bounds).subscribe((data: string[]) => console.log(data));
     }
 }

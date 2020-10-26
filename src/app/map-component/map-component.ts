@@ -2,6 +2,7 @@ import { Component, OnInit } from '@angular/core';
 import { latLng, tileLayer, Map, polygon, LatLng } from 'leaflet';
 import { DrawPolygon } from './draw-polygon';
 import { BotherService } from '../bother/bother-service'
+import { stringify } from '@angular/compiler/src/util';
 
 @Component({
   selector: 'leaflet-map',
@@ -36,8 +37,12 @@ export class MapComponent {
       if (newPolygon !== null) {
         const leafletPolygon = polygon(newPolygon, { color: 'orange' });
         leafletPolygon.addTo(this.map);
-        console.log(newPolygon[0], newPolygon[2]);
-        this.BotherService.runBother();
+        let arr1: number[] = [(newPolygon[0].lat), (newPolygon[0].lng)];
+        let arr2: number[] = [(newPolygon[2].lat), (newPolygon[2].lng)];
+        let arr: number[][] = [arr1, arr2];
+        const bounds: string = JSON.stringify(arr);
+        console.log(bounds);
+        this.BotherService.runBother(bounds);
       }
     }
   }

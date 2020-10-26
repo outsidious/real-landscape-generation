@@ -1,14 +1,15 @@
-import { ConditionalExpr } from '@angular/compiler';
 import { Component, OnInit } from '@angular/core';
 import { latLng, tileLayer, Map, polygon, LatLng } from 'leaflet';
 import { DrawPolygon } from './draw-polygon';
+import { BotherService } from '../bother/bother-service'
+import { stringify } from '@angular/compiler/src/util';
 
 @Component({
   selector: 'leaflet-map',
   templateUrl: './map-component.html',
   styleUrls: ['./map-component.css'],
 })
-export class MapComponent implements OnInit {
+export class MapComponent {
   map: Map;
   drawPolygon: DrawPolygon;
   drawPolygonState: Boolean = true;
@@ -19,13 +20,16 @@ export class MapComponent implements OnInit {
         attribution: '&copy; OpenStreetMap contributors',
       }),
     ],
-    zoom: 7,
+    zoom: 6,
     center: latLng([46.879966, -121.726909]),
   };
 
-  constructor() {}
+  constructor(
+    private BotherService: BotherService,
+  ) {
+    console.log("ok");
+  }
 
-  ngOnInit() {}
 
   mapEventHandler(e) {
     if (this.drawPolygonState) {
@@ -33,7 +37,22 @@ export class MapComponent implements OnInit {
       if (newPolygon !== null) {
         const leafletPolygon = polygon(newPolygon, { color: 'orange' });
         leafletPolygon.addTo(this.map);
-        console.log(newPolygon[0], newPolygon[2]);
+        let indMin = 0;
+        let indMax = 0;
+        for (let i = 1; i < 4; ++i) {
+          if (newPolygon[i].lat <= newPolygon[indMin].lat && newPolygon[i].lng <= newPolygon[indMin].lng) {
+            indMin = i;
+          }
+          if (newPolygon[i].lat >= newPolygon[indMax].lat && newPolygon[i].lng >= newPolygon[indMax].lng) {
+            indMax = i;
+          }
+        }
+        let arr1: number[] = [(newPolygon[indMin].lat), (newPolygon[indMin].lng)];
+        let arr2: number[] = [(newPolygon[indMax].lat), (newPolygon[indMax].lng)];
+        let arr: number[][] = [arr1, arr2];
+        const bounds: string = JSON.stringify(arr);
+        console.log(bounds);
+        this.BotherService.runBother(bounds);
       }
     }
   }

@@ -1,0 +1,1 @@
+bother --bounds 51.00791 24.60522 51.23289 25.06656 ../assets/height/height_map.png

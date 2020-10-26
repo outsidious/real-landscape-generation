@@ -37,8 +37,18 @@ export class MapComponent {
       if (newPolygon !== null) {
         const leafletPolygon = polygon(newPolygon, { color: 'orange' });
         leafletPolygon.addTo(this.map);
-        let arr1: number[] = [(newPolygon[0].lat), (newPolygon[0].lng)];
-        let arr2: number[] = [(newPolygon[2].lat), (newPolygon[2].lng)];
+        let indMin = 0;
+        let indMax = 0;
+        for (let i = 1; i < 4; ++i) {
+          if (newPolygon[i].lat <= newPolygon[indMin].lat && newPolygon[i].lng <= newPolygon[indMin].lng) {
+            indMin = i;
+          }
+          if (newPolygon[i].lat >= newPolygon[indMax].lat && newPolygon[i].lng >= newPolygon[indMax].lng) {
+            indMax = i;
+          }
+        }
+        let arr1: number[] = [(newPolygon[indMin].lat), (newPolygon[indMin].lng)];
+        let arr2: number[] = [(newPolygon[indMax].lat), (newPolygon[indMax].lng)];
         let arr: number[][] = [arr1, arr2];
         const bounds: string = JSON.stringify(arr);
         console.log(bounds);

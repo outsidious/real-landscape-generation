@@ -21,14 +21,12 @@ export class MapComponent {
       }),
     ],
     zoom: 6,
-    center: latLng([46.879966, -121.726909]),
+    center: latLng([50, -10]),
   };
 
   constructor(
     private BotherService: BotherService,
-  ) {
-    console.log("ok");
-  }
+  ) {}
 
 
   mapEventHandler(e) {

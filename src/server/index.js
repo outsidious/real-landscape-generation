@@ -32,41 +32,29 @@ app.get("/api/bother", (req, res, next) => {
     }
   });
   console.log("end sh");
-  const jsdom = require("jsdom");
-  const { JSDOM } = jsdom;
-  global.document = new JSDOM("html").window.document;
-  let image = document.createElement("img");
-  let matrix = [];
-  image.onLoad = function () {
-    console.log("loaded");
-    var canvas = document.createElement("canvas");
-    canvas.width = image.width;
-    canvas.height = image.height;
 
-    let context = canvas.getContext("2d");
-    if (context) {
-      context.drawImage(image, 0, 0);
-
-      var imageData = context.getImageData(0, 0, canvas.width, canvas.height);
-
-      for (let x = 0; x < canvas.width(); ++x) {
-        let arr = [];
-        for (let y = 0; y < canvas.height(); ++y) {
-          var index = (y * imageData.width + x) * 4;
-          var red = imageData.data[index];
-          var green = imageData.data[index + 1];
-          var blue = imageData.data[index + 2];
-          var alpha = imageData.data[index + 3];
-          arr.push({ red, green, blue, alpha });
-        }
-        matrix.push(arr);
-      }
+  console.log("start decoding");
+  var fs = require("fs"),
+    PNG = require("pngjs").PNG;
+  var data = fs.readFileSync("./height/height_map.png");
+  var png = PNG.sync.read(data);
+  var matrix = [];
+  for (var y = 0; y < png.height; y++) {
+    for (var x = 0; x < png.width; x++) {
+      var idx = (png.width * y + x) << 2;
+      matrix.push([png.data[idx],
+        png.data[idx] + 1,
+        png.data[idx + 2],
+        png.data[idx + 3]]);
     }
-    res.json(JSON.stringify(matrix));
-  };
-  image.src = "./height/height_map.png";
+  }
+  console.log("end decoding");
+
+  console.log("send answer");
+  res.json(JSON.stringify(matrix));
 });
 
 app.listen(3000, () => {
   console.log("Server running on port 3000");
 });
+

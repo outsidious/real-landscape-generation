@@ -1,0 +1,11 @@
+<h1 mat-dialog-title>
+    <b><i> {{ data.str }} </i></b>
+</h1>
+<br/>
+<ng-container *ngIf="isLoaded"> </ng-container>
+<ng-container *ngIf="!isLoaded"> </ng-container>
+<br/>
+<br/>
+<p>
+    <button mat-raised-button (click)="close()"> Close </button>
+</p>

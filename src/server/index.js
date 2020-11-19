@@ -38,20 +38,21 @@ app.get("/api/bother", (req, res, next) => {
     PNG = require("pngjs").PNG;
   var data = fs.readFileSync("./height/height_map.png");
   var png = PNG.sync.read(data);
-  var matrix = [];
+  var heightMap = new Array(png.height * png.width + 2);
+  heightMap[0] = png.width;
+  heightMap[1] = png.height;
+  var cou = 2;
   for (var y = 0; y < png.height; y++) {
     for (var x = 0; x < png.width; x++) {
       var idx = (png.width * y + x) << 2;
-      matrix.push([png.data[idx],
-        png.data[idx] + 1,
-        png.data[idx + 2],
-        png.data[idx + 3]]);
+      heightMap[cou] = png.data[idx];
+      ++cou;
     }
   }
   console.log("end decoding");
 
   console.log("send answer");
-  res.json(JSON.stringify(matrix));
+  res.json(JSON.stringify(heightMap));
 });
 
 app.listen(3000, () => {

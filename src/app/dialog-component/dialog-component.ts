@@ -1,32 +1,36 @@
-import { Component, OnDestroy, Inject } from "@angular/core";
-import { MatDialogRef } from "@angular/material/dialog";
-import { MAT_DIALOG_DATA } from "@angular/material/dialog";
+import { Component, OnDestroy, Inject, NgZone, OnInit } from '@angular/core';
+import { MatDialogRef } from '@angular/material/dialog';
+import { MAT_DIALOG_DATA } from '@angular/material/dialog';
 
 export interface DialogData {
-    str: string;
+  str: string;
 }
 
 @Component({
-    selector: "app-dialog",
-    templateUrl: "dialog-component.html",
-    styleUrls: ["./dialog-component.css"],
+  selector: 'app-dialog',
+  templateUrl: 'dialog-component.html',
+  styleUrls: ['./dialog-component.css'],
 })
-export class DialogComponent implements OnDestroy {
-    isLoaded: boolean;
+export class DialogComponent implements OnDestroy, OnInit{
+  isLoaded: boolean;
 
-    constructor(
-        private dialogRef: MatDialogRef<DialogComponent>,
-        @Inject(MAT_DIALOG_DATA) public data: DialogData
-    ) {}
+  constructor(
+    private dialogRef: MatDialogRef<DialogComponent>,
+    private ngZone: NgZone,
+    @Inject(MAT_DIALOG_DATA) public data: DialogData
+  ) {
+      this.isLoaded = false;
+  }
 
+  public close() {
+    this.dialogRef.close();
+  }
 
-    public close() {
-        this.dialogRef.close();
-    }
+  setIsLoadedTrue() {
+    this.isLoaded = true;
+  }
 
-    setIsLoadedTrue() {
-        this.isLoaded = true;
-    }
+  ngOnInit() {}
 
-    ngOnDestroy() {}
+  ngOnDestroy() {}
 }

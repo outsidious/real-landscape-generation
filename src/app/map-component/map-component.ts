@@ -1,4 +1,4 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, NgZone } from '@angular/core';
 import { latLng, tileLayer, Map, polygon, LatLng } from 'leaflet';
 import { DrawPolygon } from './draw-polygon';
 import { BotherService } from '../bother/bother-service';
@@ -27,9 +27,20 @@ export class MapComponent {
 
   constructor(
     private BotherService: BotherService,
-    private dialog: MatDialog
+    private dialog: MatDialog,
+    private ngZone: NgZone,
   ) {}
 
+  private openDialog(str_in) {
+    this.ngZone.run(() => {
+      const dialogRef = this.dialog.open(DialogComponent, {
+        data: {
+          str: str_in,
+        },
+        width: 'auto',
+      });
+    });
+  }
 
   mapEventHandler(e) {
     if (this.drawPolygonState) {
@@ -59,6 +70,7 @@ export class MapComponent {
         const bounds: string = JSON.stringify(arr);
         console.log(bounds);
         this.BotherService.runBother(bounds);
+        this.openDialog('is working');
       }
     }
   }

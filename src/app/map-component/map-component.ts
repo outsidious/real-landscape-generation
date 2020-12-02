@@ -26,18 +26,21 @@ export class MapComponent {
   };
 
   constructor(
-    private BotherService: BotherService,
     private dialog: MatDialog,
-    private ngZone: NgZone,
+    private ngZone: NgZone
   ) {}
 
-  private openDialog(str_in) {
+  private openDialog(height_map: string[], _bounds: string) {
     this.ngZone.run(() => {
       const dialogRef = this.dialog.open(DialogComponent, {
         data: {
-          str: str_in,
+          height: height_map,
+          bounds: _bounds,
         },
-        width: 'auto',
+        maxWidth: '100%',
+        maxHeight: '100%',
+        width: '98%',
+        height: '98%',
       });
     });
   }
@@ -68,9 +71,8 @@ export class MapComponent {
         let arr2: number[] = [newPolygon[indMax].lat, newPolygon[indMax].lng];
         let arr: number[][] = [arr1, arr2];
         const bounds: string = JSON.stringify(arr);
-        console.log(bounds);
-        this.BotherService.runBother(bounds);
-        this.openDialog('is working');
+        //console.log(bounds);
+        this.openDialog([], bounds);
       }
     }
   }

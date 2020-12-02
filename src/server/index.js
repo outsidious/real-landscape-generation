@@ -50,10 +50,15 @@ app.get("/api/bother", (req, res, next) => {
   console.log("end decoding");
 
   console.log("send answer");
-  res.json(JSON.stringify({width: png.width, height: png.height, heightMap: height_map}));
+  res.json(
+    JSON.stringify({
+      width: png.width,
+      height: png.height,
+      heightMap: height_map,
+    })
+  );
 });
 
 app.listen(3000, () => {
   console.log("Server running on port 3000");
 });
-

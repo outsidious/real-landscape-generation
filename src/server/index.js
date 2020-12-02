@@ -38,23 +38,27 @@ app.get("/api/bother", (req, res, next) => {
     PNG = require("pngjs").PNG;
   var data = fs.readFileSync("./height/height_map.png");
   var png = PNG.sync.read(data);
-  var matrix = [];
+  var height_map = new Array(png.height * png.width + 2);
+  var cou = 0;
   for (var y = 0; y < png.height; y++) {
     for (var x = 0; x < png.width; x++) {
       var idx = (png.width * y + x) << 2;
-      matrix.push([png.data[idx],
-        png.data[idx] + 1,
-        png.data[idx + 2],
-        png.data[idx + 3]]);
+      height_map[cou] = png.data[idx];
+      ++cou;
     }
   }
   console.log("end decoding");
 
   console.log("send answer");
-  res.json(JSON.stringify(matrix));
+  res.json(
+    JSON.stringify({
+      width: png.width,
+      height: png.height,
+      heightMap: height_map,
+    })
+  );
 });
 
 app.listen(3000, () => {
   console.log("Server running on port 3000");
 });
-

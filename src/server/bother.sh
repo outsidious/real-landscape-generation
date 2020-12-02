@@ -1,2 +1,2 @@
 rm -rf /tmp/folder/*
-bother --bounds 52.77950 -8.16921 53.31774 -7.40040 ./height/height_map.png
+bother --bounds 53.06595 -7.76765 53.35545 -7.30081 ./height/height_map.png

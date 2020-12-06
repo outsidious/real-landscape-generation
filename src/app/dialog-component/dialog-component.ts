@@ -1,4 +1,11 @@
-import { Component, OnDestroy, Inject, ViewChild, OnInit, ElementRef } from '@angular/core';
+import {
+  Component,
+  OnDestroy,
+  Inject,
+  ViewChild,
+  OnInit,
+  ElementRef,
+} from '@angular/core';
 import { MatDialogRef } from '@angular/material/dialog';
 import { MAT_DIALOG_DATA } from '@angular/material/dialog';
 import { BotherService } from '../bother/bother-service';
@@ -17,9 +24,10 @@ export interface DialogData {
   styleUrls: ['./dialog-component.css'],
 })
 export class DialogComponent implements OnDestroy, OnInit {
-  @ViewChild('canvas') canvas: ElementRef;
+  @ViewChild('canvas', { static: false }) canvas: ElementRef;
   private ctx: CanvasRenderingContext2D;
   isLoaded: boolean;
+  wasDrawed: boolean;
   constructor(
     private dialogRef: MatDialogRef<DialogComponent>,
     private BotherService: BotherService,
@@ -29,9 +37,14 @@ export class DialogComponent implements OnDestroy, OnInit {
     this.BotherService.runBother(this.data.bounds);
   }
 
-  ngAfterViewInit() {
-    this.ctx = (this.canvas.nativeElement as HTMLCanvasElement).getContext('2d');
-    this.draw();
+  ngAfterViewChecked() {
+    if (this.isLoaded && !this.wasDrawed) {
+      this.ctx = (this.canvas.nativeElement as HTMLCanvasElement).getContext(
+        '2d'
+      );
+      this.wasDrawed = true;
+      this.draw();
+    }
   }
 
   loadInfo() {
@@ -40,6 +53,7 @@ export class DialogComponent implements OnDestroy, OnInit {
       this.isLoaded = true;
     });
     this.isLoaded = false;
+    this.wasDrawed = false;
   }
 
   draw() {
@@ -77,7 +91,7 @@ export class DialogComponent implements OnDestroy, OnInit {
         console.log(cam.position.getDist(cam_view_p));
         ctx.clearRect(0, 0, width, height);
         rect.draw(ctx, cam, scale_coef);
-        x =  e.offsetX;
+        x = e.offsetX;
         y = e.offsetY;
       }
     };
@@ -113,8 +127,7 @@ export class DialogComponent implements OnDestroy, OnInit {
     this.dialogRef.close();
   }
 
-  ngOnInit() {
-  }
+  ngOnInit() {}
 
   ngOnDestroy() {}
 }

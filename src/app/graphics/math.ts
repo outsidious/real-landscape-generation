@@ -11,6 +11,11 @@ export class Point2d {
     this.x = center.x + coef.x * (this.x - center.x);
     this.y = center.y + coef.y * (this.y - center.y);
   }
+
+  movePoint(coef: Point2d) {
+    this.x += coef.x;
+    this.y += coef.y;
+  }
 }
 
 export class Matrix {

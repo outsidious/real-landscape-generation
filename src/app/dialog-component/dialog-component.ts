@@ -12,10 +12,10 @@ import { BotherService } from '../bother/bother-service';
 import * as math from '../graphics/math';
 import * as rectl from '../graphics/rect';
 import * as caml from '../graphics/camera';
+import * as scene from '../graphics/scene';
 
 export interface DialogData {
   bounds: string;
-  height: string[];
 }
 
 @Component({
@@ -28,6 +28,10 @@ export class DialogComponent implements OnDestroy, OnInit {
   private ctx: CanvasRenderingContext2D;
   isLoaded: boolean;
   wasDrawed: boolean;
+  picInfo: { width: number; height: number; heightMap: number[] } = null;
+  rectCollection: { rect: rectl.Rect3d; style: string }[] = [];
+  scene: scene.Scene = null;
+
   constructor(
     private dialogRef: MatDialogRef<DialogComponent>,
     private BotherService: BotherService,
@@ -43,39 +47,139 @@ export class DialogComponent implements OnDestroy, OnInit {
         '2d'
       );
       this.wasDrawed = true;
+      //this.processHeughtMap();
+      this.createScene();
       this.draw();
     }
   }
 
   loadInfo() {
     this.BotherService.botherSubject.subscribe((data) => {
-      this.data.height = data;
+      this.picInfo = JSON.parse(data);
+      //console.log(this.picInfo);
       this.isLoaded = true;
     });
     this.isLoaded = false;
     this.wasDrawed = false;
   }
 
-  draw() {
-    var width = (this.canvas.nativeElement.width = window.innerWidth - 10);
-    var height = (this.canvas.nativeElement.height = window.innerHeight - 50);
-    let ctx = this.ctx;
-    let p1 = new math.Point3d(300, 300, 0);
-    let p2 = new math.Point3d(500, 300, 0);
-    let p3 = new math.Point3d(500, 500, 0);
-    let p4 = new math.Point3d(300, 500, 0);
-    let rect = new rectl.Rect3d(p1, p2, p3, p4);
+  getHeight(x: number, y: number) {
+    if (this.picInfo == null) {
+      return -1;
+    }
+    if (x < 0 || y < 0) {
+      return -1;
+    }
+    if (x >= this.picInfo.width || y >= this.picInfo.height) {
+      return -1;
+    }
+    return this.picInfo.heightMap[y * this.picInfo.width + x];
+  }
+
+  /*brightness(x: number, y: number, slope: number) {
+    if (y === this.picInfo.height || x === this.picInfo.width) return '#000';
+    var b = ~~(slope * 50) + 128;
+    return ['rgba(', b, ',', b, ',', b, ',1)'].join('');
+  }*/
+
+  processHeughtMap() {
+    this.rectCollection = [];
+    for (let j = 0; j < this.picInfo.height; ++j) {
+      for (let i = 0; i < this.picInfo.width; ++i) {
+        let point = new math.Point3d(i, j, this.getHeight(i, j));
+        let newRect = new rectl.Rect3d(point, point, point, point);
+        //newRect.createRectByPoint(point);
+        //let style = this.brightness(i, j, this.getHeight(i + 1, j));
+        //this.rectCollection.push({ rect: newRect, style: style });
+      }
+    }
+  }
+
+  createScene() {
+    let width = (this.canvas.nativeElement.width = window.innerWidth - 10);
+    let height = (this.canvas.nativeElement.height = window.innerHeight - 50);
+    let moveX = width / 2 - this.picInfo.width / 2;
+    let moveY = height / 2 - this.picInfo.height / 2;
+    let moveCoef = new math.Point2d(moveX, moveY);
     let scale_coef = new math.Point2d(1, 1);
     let cam_pos = new math.Point3d(0, 0, 300);
     let cam_p1 = new math.Point3d(1, 0, 300);
     let cam_p2 = new math.Point3d(0, 1, 300);
-    let cam_view_p = new math.Point3d(400, 400, 0);
+    let cam_view_p = new math.Point3d(
+      this.picInfo.width / 2,
+      this.picInfo.height / 2,
+      0
+    );
     let cam = new caml.Camera(cam_pos, cam_p1, cam_p2, cam_view_p);
-    rect.draw(ctx, cam, scale_coef);
+    let _scene = new scene.Scene(
+      cam,
+      this.ctx,
+      moveCoef,
+      scale_coef,
+      width,
+      height
+    );
+    this.scene = _scene;
+  }
 
+  draw() {
+    var waterVal = 5;
+    var ctx = this.ctx;
+    var picInfo = this.picInfo;
+    let width = (this.canvas.nativeElement.width = window.innerWidth - 10);
+    let height = (this.canvas.nativeElement.height = window.innerHeight - 50);
+    for (var y = 0; y < this.picInfo.height; y++) {
+      for (var x = 0; x < this.picInfo.width; x++) {
+        var val = this.getHeight(x, y);
+        var top = project(x, y, val);
+        var bottom = project(x + 1, y, 0);
+        var water = project(x, y, waterVal);
+        var style = brightness(x, y, this.getHeight(x + 1, y) - val);
+
+        rect(top, bottom, style);
+        rect(water, bottom, 'rgba(50, 150, 200, 0.15)');
+      }
+    }
+
+    function rect(a, b, style) {
+      if (b.y < a.y) return;
+      ctx.fillStyle = style;
+      ctx.fillRect(a.x, a.y, b.x - a.x, b.y - a.y);
+    }
+
+    function brightness(x: number, y: number, slope: number) {
+      if (y === picInfo.height || x === picInfo.width) return '#000';
+      var b = ~~(slope * 50) + 128;
+      return ['rgba(', b, ',', b, ',', b, ',1)'].join('');
+    }
+
+    function iso(x, y) {
+      return {
+        x: 0.5 * (picInfo.height + x - y),    //?????????????
+        y: 0.5 * (x + y)
+      };
+    }
+
+    function project(flatX, flatY, flatZ) {
+      var point = iso(flatX, flatY);
+      var x0 = width * 0.5;
+      var y0 = height * 0.2;
+      var z = picInfo.height * 0.5 - flatZ + point.y * 0.75;
+      var x = (point.x - picInfo.height * 0.5) * 6;
+      var y = (picInfo.height - point.y) * 0.005 + 1;
+
+      return {
+        x: x0 + x / y,
+        y: y0 + z / y
+      };
+    }
+    /*
     let cameraRotating = false;
     let x = 0;
     let y = 0;
+    this.scene.drawCollection(this.rectCollection);
+    let scene = this.scene;
+    let collection = this.rectCollection;
 
     window.onmousedown = function (e) {
       x = e.offsetX;
@@ -86,11 +190,11 @@ export class DialogComponent implements OnDestroy, OnInit {
       if (cameraRotating) {
         var xDif = e.offsetX - x;
         var yDif = e.offsetY - y;
-        cam.rotateAroundZ(xDif * 0.004);
-        cam.rotateAroundX(yDif * 0.003);
-        console.log(cam.position.getDist(cam_view_p));
-        ctx.clearRect(0, 0, width, height);
-        rect.draw(ctx, cam, scale_coef);
+        scene.camera.rotateAroundZ(xDif * 0.004);
+        scene.camera.rotateAroundX(yDif * 0.003);
+        //console.log(cam.position.getDist(cam_view_p));
+        scene.clearScene();
+        scene.drawCollection(collection);
         x = e.offsetX;
         y = e.offsetY;
       }
@@ -98,29 +202,20 @@ export class DialogComponent implements OnDestroy, OnInit {
     window.onmouseup = function (e) {
       cameraRotating = false;
     };
-
+    
+  
     window.onmousewheel = function (e: any) {
-      /*
-      if (e.target.id === "slider-'.$question_id.'") {
-        if (!e) {
-          e = window.event;
-        } 
-        if (e.preventDefault) {
-          e.preventDefault();
-        } 
-        e.returnValue = false; 
-      }*/
       if (e.wheelDelta > 0) {
-        scale_coef.x *= 1.1;
-        scale_coef.y *= 1.1;
+        scene.scaleCoef.x *= 1.1;
+        scene.scaleCoef.y *= 1.1;
       } else {
-        scale_coef.x /= 1.1;
-        scale_coef.y /= 1.1;
+        scene.scaleCoef.x /= 1.1;
+        scene.scaleCoef.y /= 1.1;
       }
       //console.log(scale_coef);
-      ctx.clearRect(0, 0, width, height);
-      rect.draw(ctx, cam, scale_coef);
-    };
+      scene.clearScene();
+      scene.drawCollection(collection);
+    };*/
   }
 
   public close() {

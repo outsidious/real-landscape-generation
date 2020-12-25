@@ -1,7 +1,6 @@
 import { Component, OnInit, NgZone } from '@angular/core';
 import { latLng, tileLayer, Map, polygon, LatLng } from 'leaflet';
 import { DrawPolygon } from './draw-polygon';
-import { BotherService } from '../bother/bother-service';
 import { MatDialog } from '@angular/material/dialog';
 import { DialogComponent } from '../dialog-component/dialog-component';
 
@@ -18,17 +17,15 @@ export class MapComponent {
   options = {
     layers: [
       tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-        attribution: '&copy; OpenStreetMap contributors',
+        attribution:
+          'Map data: &copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors, <a href="http://viewfinderpanoramas.org">SRTM</a> | Map style: &copy; <a href="https://opentopomap.org">OpenTopoMap</a> (<a href="https://creativecommons.org/licenses/by-sa/3.0/">CC-BY-SA</a>)',
       }),
     ],
     zoom: 6,
     center: latLng([50, -10]),
   };
 
-  constructor(
-    private dialog: MatDialog,
-    private ngZone: NgZone
-  ) {}
+  constructor(private dialog: MatDialog, private ngZone: NgZone) {}
 
   private openDialog(height_map: string[], _bounds: string) {
     this.ngZone.run(() => {
@@ -40,8 +37,8 @@ export class MapComponent {
         maxHeight: '100%',
         width: '100%',
         height: '100%',
-      }); 
-    });  
+      });
+    });
   }
 
   mapEventHandler(e) {
@@ -66,12 +63,20 @@ export class MapComponent {
             indMax = i;
           }
         }
+        let dif = Math.max(
+          newPolygon[indMax].lat - newPolygon[indMin].lat,
+          newPolygon[indMax].lng - newPolygon[indMin].lng
+        );
         let arr1: number[] = [newPolygon[indMin].lat, newPolygon[indMin].lng];
-        let arr2: number[] = [newPolygon[indMax].lat, newPolygon[indMax].lng];
+        let arr2: number[] = [
+          newPolygon[indMin].lat + dif,
+          newPolygon[indMin].lng + dif,
+        ];
         let arr: number[][] = [arr1, arr2];
         const bounds: string = JSON.stringify(arr);
         //console.log(bounds);
         this.openDialog([], bounds);
+        leafletPolygon.remove();
       }
     }
   }

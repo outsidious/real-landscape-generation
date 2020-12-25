@@ -47,7 +47,7 @@ export class DrawPolygon {
     }
     this.polygon = null;
     this.points.forEach((p) => {
-      this.map.removeLayer(p);
+      this.map.removeLayer (p);
     });
     this.points = [];
   }
@@ -56,6 +56,7 @@ export class DrawPolygon {
     if (e.type === 'mousemove') {
       if (this.startDrawing === true) {
         this.finishPoint = e.latlng;
+        //console.log(e);
         this.draw();
         return null;
       } else {
@@ -84,6 +85,9 @@ export class DrawPolygon {
     let newPoint = marker(this.startPoint, { icon: icon });
     newPoint.addTo(this.map);
     this.points.push(newPoint);
+    //let dif = this.finishPoint.lat - this.startPoint.lat;
+    //this.finishPoint.lat = this.startPoint.lat + dif;
+    //this.finishPoint.lng = this.startPoint.lng + dif;
     newPoint = marker([this.startPoint.lat, this.finishPoint.lng], {
       icon: icon,
     });

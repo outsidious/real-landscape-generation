@@ -11,75 +11,19 @@ export class Point2d {
     this.x = center.x + coef.x * (this.x - center.x);
     this.y = center.y + coef.y * (this.y - center.y);
   }
-}
 
-export class Matrix {
-  data: number[][];
-
-  constructor() {
-    this.data = [];
-    for (let i = 0; i < 4; ++i) {
-      this.data.push([0, 0, 0, 0]);
-    }
+  movePoint(coef: Point2d) {
+    this.x += coef.x;
+    this.y += coef.y;
   }
 
-  resetMatrix() {
-    for (let i = 0; i < 4; ++i) {
-      for (let j = 0; j < 4; ++j) {
-        this.data[i][j] = 0;
-      }
-    }
-  }
-
-  setMoveMatrix(x: number, y: number, z: number) {
-    this.resetMatrix();
-    this.data[0][0] = 1;
-    this.data[1][1] = 1;
-    this.data[2][2] = 1;
-    this.data[3][3] = 1;
-    this.data[0][3] = x;
-    this.data[1][3] = y;
-    this.data[2][3] = z;
-  }
-
-  setScaleMatrix(x: number, y: number, z: number) {
-    this.resetMatrix();
-    this.data[0][0] = x;
-    this.data[1][1] = y;
-    this.data[2][2] = z;
-    this.data[3][3] = 1;
-  }
-
-  setRotateOxMatrix(angle: number) {
-    this.resetMatrix();
-    this.data[0][0] = 1;
-    this.data[1][1] = Math.cos(angle);
-    this.data[1][2] = -Math.sin(angle);
-    this.data[2][1] = Math.sin(angle);
-    this.data[2][2] = Math.cos(angle);
-    this.data[3][3] = 1;
-  }
-
-  setRotateOyMatrix(angle: number) {
-    this.resetMatrix();
-    this.data[0][0] = Math.cos(angle);
-    this.data[1][1] = 1;
-    this.data[2][0] = -Math.sin(angle);
-    this.data[0][2] = Math.sin(angle);
-    this.data[2][2] = Math.cos(angle);
-    this.data[3][3] = 1;
-  }
-
-  setRotateOzMatrix(angle: number) {
-    this.resetMatrix();
-    this.data[0][0] = Math.cos(angle);
-    this.data[0][1] = -Math.sin(angle);
-    this.data[1][0] = Math.sin(angle);
-    this.data[1][1] = Math.cos(angle);
-    this.data[2][2] = 1;
-    this.data[3][3] = 1;
+  iso(size: number) {
+    this.x = 0.5 * (size + this.x - this.y);
+    this.y =  0.5 * (this.x + this.y);
+    return this;
   }
 }
+
 
 export class Point3d {
   x: number;
@@ -92,17 +36,17 @@ export class Point3d {
     this.z = z_i;
   }
 
-  pointTransform(matrix: Matrix) {
-    let result = [0, 0, 0, 0];
-    let data = [this.x, this.y, this.z, 1];
-    for (let i = 0; i < 4; ++i) {
-      for (let j = 0; j < 4; ++j) {
-        result[i] += data[j] * matrix.data[i][j];
-      }
-    }
-    this.x = result[0];
-    this.y = result[1];
-    this.z = result[2];
+  project(img_size: number, width: number, height: number) {
+    var proj_point = new Point2d(this.x, this.y);
+    proj_point.iso(img_size);
+    var x0 = width * 0.5;
+    var y0 = height * 0.2;
+    var z = img_size * 0.5 - this.z + proj_point.y * 0.75;
+    var x = (proj_point.x - img_size * 0.5) * 6;
+    var y = (img_size - proj_point.y) * 0.005 + 1;
+    proj_point.x = x0 + x / y;
+    proj_point.y = y0 + z / y;
+    return proj_point
   }
 
   getDist(point: Point3d) {
@@ -119,3 +63,4 @@ export class Point3d {
     );
   }
 }
+

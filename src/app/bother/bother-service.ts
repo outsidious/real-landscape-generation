@@ -6,14 +6,14 @@ import { map } from 'rxjs/operators';
 
 @Injectable({ providedIn: 'root' })
 export class BotherService {
-  botherSubject = new BehaviorSubject<string[]>([]);
+  botherSubject = new BehaviorSubject<string>("{}");
 
   constructor(private http: HttpClient) {}
 
   runBother(bounds) {
     this.http
       .get(environment.backend + '/bother/?bounds=' + bounds)
-      .subscribe((data: string[]) => {
+      .subscribe((data: string) => {
         //console.log(data);
         this.botherSubject.next(data);
         return data;

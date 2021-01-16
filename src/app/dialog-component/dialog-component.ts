@@ -1,14 +1,20 @@
-import { Component, OnDestroy, Inject, ViewChild, OnInit, ElementRef } from '@angular/core';
+import {
+  Component,
+  OnDestroy,
+  Inject,
+  ViewChild,
+  OnInit,
+  ElementRef,
+} from '@angular/core';
 import { MatDialogRef } from '@angular/material/dialog';
 import { MAT_DIALOG_DATA } from '@angular/material/dialog';
 import { BotherService } from '../bother/bother-service';
 import * as math from '../graphics/math';
-import * as rectl from '../graphics/rect';
-import * as caml from '../graphics/camera';
+import { Subscription }  from 'rxjs'
+import * as tile from '../graphics/tile';
 
 export interface DialogData {
   bounds: string;
-  height: string[];
 }
 
 @Component({
@@ -17,9 +23,13 @@ export interface DialogData {
   styleUrls: ['./dialog-component.css'],
 })
 export class DialogComponent implements OnDestroy, OnInit {
-  @ViewChild('canvas') canvas: ElementRef;
+  @ViewChild('canvas', { static: false }) canvas: ElementRef;
   private ctx: CanvasRenderingContext2D;
   isLoaded: boolean;
+  wasDrawed: boolean;
+  picInfo: { width: number; height: number; heightMap: number[] } = null;
+  botherSubscription: Subscription;
+
   constructor(
     private dialogRef: MatDialogRef<DialogComponent>,
     private BotherService: BotherService,
@@ -29,92 +39,80 @@ export class DialogComponent implements OnDestroy, OnInit {
     this.BotherService.runBother(this.data.bounds);
   }
 
-  ngAfterViewInit() {
-    this.ctx = (this.canvas.nativeElement as HTMLCanvasElement).getContext('2d');
-    this.draw();
+  ngAfterViewChecked() {
+    if (this.isLoaded && !this.wasDrawed) {
+      this.createScene();
+      this.draw();
+    }
   }
 
   loadInfo() {
-    this.BotherService.botherSubject.subscribe((data) => {
-      this.data.height = data;
+    this.botherSubscription = this.BotherService.botherSubject.subscribe((data) => {
+      this.picInfo = JSON.parse(data);
       this.isLoaded = true;
     });
     this.isLoaded = false;
+    this.wasDrawed = false;
+  }
+
+  getHeight(x: number, y: number) {
+    if (this.picInfo == null) {
+      return -1;
+    }
+    if (x < 0 || y < 0) {
+      return -1;
+    }
+    if (x >= this.picInfo.width || y >= this.picInfo.height) {
+      return -1;
+    }
+    return this.picInfo.heightMap[y * this.picInfo.width + x];
+  }
+
+  createScene() {
+    this.ctx = (this.canvas.nativeElement as HTMLCanvasElement).getContext(
+      '2d'
+    );
+    this.wasDrawed = true;
   }
 
   draw() {
-    var width = (this.canvas.nativeElement.width = window.innerWidth - 10);
-    var height = (this.canvas.nativeElement.height = window.innerHeight - 50);
-    let ctx = this.ctx;
-    let p1 = new math.Point3d(300, 300, 0);
-    let p2 = new math.Point3d(500, 300, 0);
-    let p3 = new math.Point3d(500, 500, 0);
-    let p4 = new math.Point3d(300, 500, 0);
-    let rect = new rectl.Rect3d(p1, p2, p3, p4);
-    let scale_coef = new math.Point2d(1, 1);
-    let cam_pos = new math.Point3d(0, 0, 300);
-    let cam_p1 = new math.Point3d(1, 0, 300);
-    let cam_p2 = new math.Point3d(0, 1, 300);
-    let cam_view_p = new math.Point3d(400, 400, 0);
-    let cam = new caml.Camera(cam_pos, cam_p1, cam_p2, cam_view_p);
-    rect.draw(ctx, cam, scale_coef);
-
-    let cameraRotating = false;
-    let x = 0;
-    let y = 0;
-
-    window.onmousedown = function (e) {
-      x = e.offsetX;
-      y = e.offsetY;
-      cameraRotating = true;
-    };
-    window.onmousemove = function (e) {
-      if (cameraRotating) {
-        var xDif = e.offsetX - x;
-        var yDif = e.offsetY - y;
-        cam.rotateAroundZ(xDif * 0.004);
-        cam.rotateAroundX(yDif * 0.003);
-        console.log(cam.position.getDist(cam_view_p));
-        ctx.clearRect(0, 0, width, height);
-        rect.draw(ctx, cam, scale_coef);
-        x =  e.offsetX;
-        y = e.offsetY;
+    var waterVal = 5;
+    var picInfo = this.picInfo;
+    let width = (this.canvas.nativeElement.width = window.innerWidth - 10);
+    let height = (this.canvas.nativeElement.height = window.innerHeight - 50);
+    for (var y = 0; y < this.picInfo.height; y++) {
+      for (var x = 0; x < this.picInfo.width; x++) {
+        var val = this.getHeight(x, y);
+        var p1 = new math.Point3d(x, y, val);
+        var p2 = new math.Point3d(x + 1, y, 0);
+        var water_p = new math.Point3d(x, y, waterVal); 
+        var top = p1.project(this.picInfo.width, width, height);
+        var bottom = p2.project(this.picInfo.width, width, height);
+        var water_proj = water_p.project(this.picInfo.width, width, height);
+        var land = new tile.Tile(top, bottom);
+        var water = new tile.Tile(water_proj, bottom);
+        var style = brightness(x, y, this.getHeight(x + 1, y) - val);
+        land.draw(this.ctx, style);
+        water.draw(this.ctx, 'rgba(50, 150, 200, 0.15)')
       }
-    };
-    window.onmouseup = function (e) {
-      cameraRotating = false;
-    };
+    }
 
-    window.onmousewheel = function (e: any) {
-      /*
-      if (e.target.id === "slider-'.$question_id.'") {
-        if (!e) {
-          e = window.event;
-        } 
-        if (e.preventDefault) {
-          e.preventDefault();
-        } 
-        e.returnValue = false; 
-      }*/
-      if (e.wheelDelta > 0) {
-        scale_coef.x *= 1.1;
-        scale_coef.y *= 1.1;
-      } else {
-        scale_coef.x /= 1.1;
-        scale_coef.y /= 1.1;
-      }
-      //console.log(scale_coef);
-      ctx.clearRect(0, 0, width, height);
-      rect.draw(ctx, cam, scale_coef);
-    };
+    function brightness(x: number, y: number, slope: number) {
+      if (y === picInfo.height || x === picInfo.width) return '#000';
+      var b = ~~(slope * 50) + 128;
+      return ['rgba(', b, ',', b, ',', b, ',1)'].join('');
+    }
   }
 
   public close() {
     this.dialogRef.close();
   }
 
-  ngOnInit() {
-  }
+  ngOnInit() {}
 
-  ngOnDestroy() {}
+  ngOnDestroy() {
+    if (this.botherSubscription) {
+      this.botherSubscription.unsubscribe;
+    }
+  }
 }
